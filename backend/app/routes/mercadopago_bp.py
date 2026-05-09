@@ -35,7 +35,7 @@ def build_order_email_html(
     """
     Genera el HTML del mail de confirmación de pedido.
     items: lista de dicts {title, quantity, unit_price, subtotal}
-    title ya puede incluir el sabor elegido (ej: "Pod Vaper (Frutilla Ice)").
+    title ya puede incluir una variante elegida.
     """
 
     # ✅ Aseguramos que los productos muestren el sabor

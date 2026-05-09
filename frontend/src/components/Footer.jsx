@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { withWholesale } from '../utils/navigation.js'
 import { PERFUME_CATEGORY_DEFINITIONS as FOOTER_CATEGORIES } from '../utils/perfumeCategories.js'
 
-/* import logofooter from "../assets/logofooter.png"; */
 import { storeConfig } from "../config/storeConfig";
 
 const logofooter = `/${storeConfig.media.footerLogo}`;

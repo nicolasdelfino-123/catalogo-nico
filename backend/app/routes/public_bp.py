@@ -7,6 +7,7 @@ from app.models import ProductImage
 import hashlib
 import json
 from sqlalchemy.orm.attributes import flag_modified
+from app.category_config import PERFUME_CATEGORY_DEFINITIONS
 
 import smtplib
 import os
@@ -31,7 +32,7 @@ def demo():
 def about():
     return jsonify({'msg':'About Page'})
 
-# === RUTAS PÚBLICAS PARA LA TIENDA DE VAPES ===
+# === RUTAS PÚBLICAS PARA EL CATÁLOGO ===
 
 @public_bp.route('/products', methods=['GET'])
 def get_products():
@@ -77,10 +78,9 @@ def get_product_by_id(product_id):
 
 @public_bp.route('/categories', methods=['GET'])
 def get_categories():
-    """Obtener todas las categorías"""
+    """Obtener las categorías canónicas del catálogo"""
     try:
-        categories = Category.query.all()
-        return jsonify([category.serialize() for category in categories]), 200
+        return jsonify(PERFUME_CATEGORY_DEFINITIONS), 200
         
     except Exception as e:
         return jsonify({'error': 'Error al obtener categorías: ' + str(e)}), 500

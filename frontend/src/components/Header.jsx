@@ -3,9 +3,6 @@ import { Context } from "../js/store/appContext.jsx";
 import Cart from "../components/Cart.jsx";
 import AccountDropdown from "../components/AccountDropdown.jsx";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-/* import logo from '@/assets/logo.png'
-import logo22 from '@/assets/logo-22.png' */
-import zarpados from '@/assets/zarpados-22.png'
 import { withWholesale } from "../utils/navigation.js";
 import { formatPrice } from "../utils/price.js";
 import { Search, ShoppingCart } from "lucide-react";
@@ -342,32 +339,6 @@ export default function Header() {
                 />
               </Link>
             </div>
-            {/* Logo */}
-            {/*   <div className="flex-shrink-0 md:mr-auto">
-            <Link to={withWholesale("/inicio")}
-              aria-label="Ir al inicio" className="block">
-              <img
-                src={zarpados}
-                alt="Zarpados"
-                className="block w-auto select-none transition-transform duration-300"
-                style={{
-                  height: isScrolled ? `${LOGO_SCROLL_H}px` : `${LOGO_BASE_H}px`,
-                  width: LOGO_W,
-                  objectFit: "contain",
-                  maxWidth: "300px",
-                  transform: isScrolled ? "scale(0.94)" : "scale(1)",
-                  willChange: "transform",
-                  backfaceVisibility: "hidden",
-                  translate: "0",
-                  background: "transparent",
-                }}
-                decoding="sync"
-                loading="eager"
-                fetchPriority="high"
-              />
-
-            </Link>
-          </div> */}
 
             {/* Navigation - Desktop */}
             <nav className="hidden md:flex h-full items-center space-x-10 font-serif tracking-wider text-sm uppercase">

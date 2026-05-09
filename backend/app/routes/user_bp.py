@@ -484,7 +484,7 @@ def register_email():
         
         # Enviar email
         msg = Message(
-            'Confirma tu registro en Zarpados Vapers',
+            'Confirma tu registro',
             recipients=[email],
             charset='utf-8'
         )
@@ -499,7 +499,7 @@ def register_email():
         setup_url = f"{frontend_url}/setup-password?token={token}"
         
         msg.html = """
-        <h2>¡Bienvenido a Zarpados Vapers!</h2>
+        <h2>¡Bienvenido!</h2>
         <p>Hace clic en el siguiente enlace para establecer tu contraseña:</p>
         <a href="{}" style="background: #7c3aed; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
             Establecer Contraseña
@@ -572,7 +572,7 @@ def forgot_password():
         
         # Enviar email de recuperación
         msg = Message(
-            'Recupera tu contraseña - Zarpados Vapers',
+            'Recupera tu contraseña',
             recipients=[email],
             charset='utf-8'
         )
@@ -589,7 +589,7 @@ def forgot_password():
         
         msg.html = """
         <h2>Recuperación de Contraseña</h2>
-        <p>Recibimos una solicitud para restablecer tu contraseña en Zarpados Vapers.</p>
+        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
         <p>Hace clic en el siguiente enlace para crear una nueva contraseña:</p>
         <a href="{}" style="background: #7c3aed; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
             Restablecer Contraseña

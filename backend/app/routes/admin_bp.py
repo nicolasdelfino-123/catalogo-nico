@@ -16,32 +16,24 @@ from flask import Blueprint, request, jsonify, current_app, url_for
 import os, io, hashlib, uuid
 from app.models import Order, OrderItem  # asegurate que esté arriba también
 from flask import redirect
+from app.category_config import CATEGORY_ID_TO_NAME, DEFAULT_CATEGORY_ID
 
 
 
 
 admin_bp = Blueprint('admin', __name__)
 
-# Catálogo de categorías esperado por el frontend actual.
-# Mantener IDs estables evita romper FK y filtros ya existentes.
-CATEGORY_ID_TO_NAME = {
-    1: "Perfumes masculinos",
-    2: "Femeninos",
-    3: "Unisex",
-    4: "Cremas",
-    5: "Body splash victoria secret",
-    6: "Perfumes",  # compatibilidad legacy
-    7: "Perfumes de Diseñador",
-}
-
 def _ensure_category_exists(category_id: int):
     category_id = int(category_id)
+    if category_id not in CATEGORY_ID_TO_NAME:
+        category_id = DEFAULT_CATEGORY_ID
+
     category = Category.query.get(category_id)
     if category:
         return category
 
     # Si no existe el ID exacto, lo creamos con nombre estable para evitar FK errors.
-    name = CATEGORY_ID_TO_NAME.get(category_id, f"Categoría {category_id}")
+    name = CATEGORY_ID_TO_NAME.get(category_id, CATEGORY_ID_TO_NAME[DEFAULT_CATEGORY_ID])
     by_name = Category.query.filter_by(name=name).first()
     if by_name:
         return by_name
@@ -209,8 +201,6 @@ def create_product():
             flavor_catalog=catalog,
             flavor_stock_mode=flavor_stock_mode,
 
-            # puffs opcional (no molesta si queda)
-            puffs=(int(data['puffs']) if str(data.get('puffs','')).strip().isdigit() else None),
             volume_ml=volume_ml,
             volume_options=volume_options,
 
@@ -260,10 +250,6 @@ def update_product(product_id):
             product.category_id = safe_category.id
         if 'is_active' in data:
             product.is_active = bool(data['is_active'])
-            # 👇 NUEVO: puffs (caladas)
-        if 'puffs' in data:
-            v = str(data.get('puffs','')).strip()
-            product.puffs = int(v) if v.isdigit() else None
         if 'volume_ml' in data:
             try:
                 raw = data.get('volume_ml')

@@ -193,9 +193,6 @@ const ProductDetail = () => {
         if (actions && actions.addToCart && product) {
             const productWithFlavor = selectedFlavor ? { ...product, selectedFlavor } : product;
             actions.addToCart(productWithFlavor, quantity);
-
-            // 👇 Disparar Toast con datos del producto
-
         }
 
     };

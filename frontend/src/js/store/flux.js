@@ -590,8 +590,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 			},
 
 			// === ACCIONES DE CARRITO MEJORADAS ===
-			// === NUEVO SISTEMA DE TOAST (para NewToast.jsx) ===
-			// ✅ NUEVA VERSIÓN FUNCIONAL
+			// === SISTEMA DE TOAST (NewToast.jsx) ===
 			showToast: (data, duration = 3000) => {
 				const store = getStore();
 				const newToast = {
@@ -602,10 +601,6 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 				console.log("🔥 [FLUX] showToast ->", newToast);
 				setStore({ ...store, toast: newToast });
-
-				// 👇 Disparar evento DOM para Toast.jsx
-				const event = new CustomEvent("flux-toast-update", { detail: newToast });
-				document.dispatchEvent(event);
 
 				// ⏳ Cierre después del tiempo configurado (con seguridad)
 				clearTimeout(window.__toastTimer);
@@ -619,10 +614,6 @@ const getState = ({ getStore, getActions, setStore }) => {
 				const clearedToast = { isVisible: false, message: "", product: null };
 				console.log("🧯 [FLUX] hideToast ->", clearedToast);
 				setStore({ ...store, toast: clearedToast });
-
-				// 👇 También dispara el evento DOM para que el componente se actualice
-				const event = new CustomEvent("flux-toast-update", { detail: clearedToast });
-				document.dispatchEvent(event);
 			},
 
 			// ✅ addToCart (compatible con NewToast)

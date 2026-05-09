@@ -1,41 +1,43 @@
 """
-Archivo para crear las categorías base de la tienda
-Este script solo crea las categorías necesarias para el admin
+Archivo para crear las categorías base del catálogo.
 """
 
 from app import db
+from app.category_config import PERFUME_CATEGORY_DEFINITIONS
 from app.models import Category
 
+
 def seed_database():
-    """Función para crear solo las categorías base"""
-    
-    # Crear categorías (idempotente)
-    categories = [
-        Category(name="Vapes Desechables", description="Vapes de un solo uso"),
-        Category(name="Pods Recargables", description="Sistemas de pods recargables"),
-        Category(name="Líquidos", description="E-liquids y sales de nicotina"),
-        Category(name="Accesorios", description="Repuestos y accesorios"),
-        Category(name="Mods", description="Mods y dispositivos avanzados"),
-        Category(name="Atomizadores", description="Tanks y RDA"),
-        Category(name="Sales de Nicotina", description="Sales de nicotina"),
-        Category(name="Celulares", description="Smartphones y accesorios"),
-        Category(name="Perfumes", description="Fragancias"),
-        Category(name="Perfumes de Diseñador", description="Fragancias de diseñador"),
-]
-    
-    for c in categories:
-        if not Category.query.filter_by(name=c.name).first():
-            db.session.add(c)
+    """Crear o actualizar las categorías canónicas."""
+    for item in PERFUME_CATEGORY_DEFINITIONS:
+        category = Category.query.get(item["id"])
+        if category:
+            category.name = item["name"]
+            category.description = item.get("description", "")
+            continue
+
+        existing = Category.query.filter_by(name=item["name"]).first()
+        if existing:
+            existing.description = item.get("description", "")
+            continue
+
+        db.session.add(Category(
+            id=item["id"],
+            name=item["name"],
+            description=item.get("description", ""),
+        ))
 
     try:
         db.session.commit()
-        print("✅ Categorías creadas exitosamente!")
-        print(f"✅ Total categorías: {len(categories)}")
+        print("Categorías creadas/actualizadas correctamente.")
+        print(f"Total categorías canónicas: {len(PERFUME_CATEGORY_DEFINITIONS)}")
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error al crear categorías: {e}")
+        print(f"Error al crear categorías: {e}")
+
 
 if __name__ == "__main__":
     from app.run import app
+
     with app.app_context():
         seed_database()
