@@ -5,6 +5,7 @@ Este archivo contendrá las rutas administrativas para CRUD de productos
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import or_, text
 from app import db
 from app.models import Product, Category, User,ProductImage,now_cba_naive
 from flask import current_app, send_from_directory, url_for
@@ -16,12 +17,97 @@ from flask import Blueprint, request, jsonify, current_app, url_for
 import os, io, hashlib, uuid
 from app.models import Order, OrderItem  # asegurate que esté arriba también
 from flask import redirect
+import json
 from app.category_config import CATEGORY_ID_TO_NAME, DEFAULT_CATEGORY_ID
 
 
 
 
 admin_bp = Blueprint('admin', __name__)
+
+ADMIN_HIDDEN_ORDER_MARKER = "__ADMIN_HIDDEN__"
+ADMIN_SETTINGS_TABLE = "admin_settings"
+HOME_FEATURED_PRODUCTS_KEY = "home_featured_product_ids"
+MAX_HOME_FEATURED_PRODUCTS = 12
+
+def _ensure_admin_settings_table():
+    db.session.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS {ADMIN_SETTINGS_TABLE} (
+            key VARCHAR(120) PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """))
+
+def _get_admin_setting(key, default=None):
+    _ensure_admin_settings_table()
+    row = db.session.execute(
+        text(f"SELECT value FROM {ADMIN_SETTINGS_TABLE} WHERE key = :key"),
+        {"key": key},
+    ).first()
+    if not row:
+        return default
+    try:
+        return json.loads(row[0])
+    except Exception:
+        return default
+
+def _set_admin_setting(key, value):
+    _ensure_admin_settings_table()
+    payload = json.dumps(value)
+    result = db.session.execute(
+        text(f"UPDATE {ADMIN_SETTINGS_TABLE} SET value = :value WHERE key = :key"),
+        {"key": key, "value": payload},
+    )
+    if result.rowcount == 0:
+        db.session.execute(
+            text(f"INSERT INTO {ADMIN_SETTINGS_TABLE} (key, value) VALUES (:key, :value)"),
+            {"key": key, "value": payload},
+        )
+
+def _normalize_featured_product_ids(value):
+    if not isinstance(value, list):
+        return None
+
+    ids = []
+    seen = set()
+    for raw_id in value:
+        try:
+            product_id = int(raw_id)
+        except Exception:
+            return None
+        if product_id <= 0:
+            return None
+        if product_id in seen:
+            continue
+        seen.add(product_id)
+        ids.append(product_id)
+
+    return ids
+
+def _serialize_admin_order(order):
+    return {
+        "id": order.id,
+        "status": order.status,
+        "public_order_number": order.public_order_number,
+        "total_amount": float(order.total_amount or 0),
+        "shipping_cost": float(order.shipping_cost or 0),
+        "payment_method": order.payment_method,
+        "payment_id": order.payment_id,
+        "external_reference": order.external_reference,
+        "customer_first_name": order.customer_first_name,
+        "customer_last_name": order.customer_last_name,
+        "customer_email": order.customer_email,
+        "customer_phone": order.customer_phone,
+        "customer_comment": order.customer_comment,
+        "shipping_address": order.shipping_address,
+        "billing_address": order.billing_address,
+        "created_at": order.created_at.isoformat() if order.created_at else None,
+        "order_items": [item.serialize() for item in order.order_items],
+        "customer_dni": order.customer_dni,
+        "customer_postal_code": (
+            order.shipping_address.get("postalCode") if isinstance(order.shipping_address, dict) else None
+        ),
+    }
 
 def _ensure_category_exists(category_id: int):
     category_id = int(category_id)
@@ -354,6 +440,53 @@ def get_all_products_admin():
         return jsonify({'error': f'Error al obtener productos: {str(e)}'}), 500
 
 
+@admin_bp.route('/home-featured-products', methods=['GET'])
+@jwt_required()
+def get_home_featured_products():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado. Se requieren permisos de administrador.'}), 403
+
+    try:
+        product_ids = _get_admin_setting(HOME_FEATURED_PRODUCTS_KEY, []) or []
+        product_ids = _normalize_featured_product_ids(product_ids) or []
+        return jsonify({'product_ids': product_ids}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener destacados de Inicio: {str(e)}'}), 500
+
+
+@admin_bp.route('/home-featured-products', methods=['PUT'])
+@jwt_required()
+def update_home_featured_products():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado. Se requieren permisos de administrador.'}), 403
+
+    try:
+        data = request.get_json() or {}
+        product_ids = _normalize_featured_product_ids(data.get('product_ids'))
+        if product_ids is None:
+            return jsonify({'error': 'product_ids debe ser una lista de IDs numéricos'}), 400
+
+        if len(product_ids) > MAX_HOME_FEATURED_PRODUCTS:
+            return jsonify({'error': f'Solo podés seleccionar hasta {MAX_HOME_FEATURED_PRODUCTS} productos para Inicio.'}), 400
+
+        existing_ids = set()
+        if product_ids:
+            rows = db.session.query(Product.id).filter(Product.id.in_(product_ids)).all()
+            existing_ids = {int(row[0]) for row in rows}
+
+        missing_ids = [product_id for product_id in product_ids if product_id not in existing_ids]
+        if missing_ids:
+            return jsonify({'error': 'Hay productos inexistentes en la selección', 'missing_ids': missing_ids}), 400
+
+        _set_admin_setting(HOME_FEATURED_PRODUCTS_KEY, product_ids)
+        db.session.commit()
+
+        return jsonify({'product_ids': product_ids}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al guardar destacados de Inicio: {str(e)}'}), 500
+
+
 # =======================
 #       CATEGORÍAS
 # =======================
@@ -574,40 +707,46 @@ def admin_get_orders():
         return jsonify({"error": "Acceso denegado. Se requieren permisos de administrador."}), 403
 
     try:
-        orders = Order.query.order_by(Order.created_at.desc()).all()
+        orders = (
+            Order.query
+            .filter(or_(Order.tracking_code.is_(None), Order.tracking_code != ADMIN_HIDDEN_ORDER_MARKER))
+            .order_by(Order.created_at.desc())
+            .all()
+        )
         serialized = []
 
         for o in orders:
-            serialized.append({
-                "id": o.id,
-                "status": o.status,
-                "public_order_number": o.public_order_number, 
-                "total_amount": float(o.total_amount or 0),
-                "shipping_cost": float(o.shipping_cost or 0),
-                "payment_method": o.payment_method,
-                "payment_id": o.payment_id,
-                "external_reference": o.external_reference,
-                "customer_first_name": o.customer_first_name,
-                "customer_last_name": o.customer_last_name,
-                "customer_email": o.customer_email,
-                "customer_phone": o.customer_phone,
-                "customer_comment": o.customer_comment,
-                "shipping_address": o.shipping_address,
-                "billing_address": o.billing_address,
-                "created_at": o.created_at.isoformat() if o.created_at else None,
-                "order_items": [item.serialize() for item in o.order_items],
-                "customer_dni": o.customer_dni,
-                "customer_postal_code": (
-                    o.shipping_address.get("postalCode") if isinstance(o.shipping_address, dict) else None
-                ),
-
-
-            })
+            serialized.append(_serialize_admin_order(o))
 
         return jsonify(serialized), 200
 
     except Exception as e:
         return jsonify({"error": f"Error al obtener pedidos: {str(e)}"}), 500
+
+
+@admin_bp.route("/orders/<int:order_id>", methods=["DELETE"])
+@jwt_required()
+def admin_hide_order(order_id):
+    """Oculta un pedido del panel admin sin borrarlo de la base de datos."""
+    if not admin_required():
+        return jsonify({"error": "Acceso denegado"}), 403
+
+    try:
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({"error": "Pedido no encontrado"}), 404
+
+        order.tracking_code = ADMIN_HIDDEN_ORDER_MARKER
+        order.updated_at = now_cba_naive()
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Pedido #{order.public_order_number or order.id} ocultado del panel admin",
+            "order_id": order_id,
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error al ocultar pedido: {str(e)}"}), 500
 
 
 
@@ -678,34 +817,14 @@ def alias_pedidos():
     if not admin_required():
         return jsonify({"error": "Acceso denegado"}), 403
     try:
-        orders = Order.query.order_by(Order.created_at.desc()).all()
+        orders = (
+            Order.query
+            .filter(or_(Order.tracking_code.is_(None), Order.tracking_code != ADMIN_HIDDEN_ORDER_MARKER))
+            .order_by(Order.created_at.desc())
+            .all()
+        )
         serialized = [
-            {
-                "id": o.id,
-                "status": o.status,
-                "public_order_number": o.public_order_number, 
-                "total_amount": float(o.total_amount or 0),
-                "shipping_cost": float(o.shipping_cost or 0),
-                "payment_method": o.payment_method,
-                "payment_id": o.payment_id,
-                "external_reference": o.external_reference,
-                "customer_first_name": o.customer_first_name,
-                "customer_last_name": o.customer_last_name,
-                "customer_email": o.customer_email,
-                "customer_phone": o.customer_phone,
-                "customer_comment": o.customer_comment,
-                "shipping_address": o.shipping_address,
-                "billing_address": o.billing_address,
-                "created_at": o.created_at.isoformat() if o.created_at else None,
-                "order_items": [item.serialize() for item in o.order_items],
-                "customer_dni": o.customer_dni,
-                "customer_postal_code": (
-                    o.shipping_address.get("postalCode") if isinstance(o.shipping_address, dict) else None
-                ),
-
-
-
-            }
+            _serialize_admin_order(o)
             for o in orders
         ]
         return jsonify(serialized), 200

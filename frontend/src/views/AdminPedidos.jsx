@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
 
@@ -7,6 +8,7 @@ export default function AdminPedidos() {
     const [orders, setOrders] = useState([]);
     const [selected, setSelected] = useState(null); // 🆕 Pedido seleccionado
     const [loadingId, setLoadingId] = useState(null);
+    const [orderToHide, setOrderToHide] = useState(null);
     const navigate = useNavigate();
 
     const token =
@@ -47,6 +49,30 @@ export default function AdminPedidos() {
         } catch (err) {
             console.error(err);
             alert("Error actualizando estado");
+        }
+    };
+
+    const hideOrder = async (order) => {
+        setLoadingId(order.id);
+        try {
+            const res = await fetch(`${API}/admin/orders/${order.id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                alert(data?.error || "No se pudo ocultar el pedido");
+                return;
+            }
+
+            setOrders((prev) => prev.filter((item) => item.id !== order.id));
+            if (selected?.id === order.id) setSelected(null);
+            setOrderToHide(null);
+        } catch (err) {
+            console.error(err);
+            alert("Error ocultando pedido");
+        } finally {
+            setLoadingId(null);
         }
     };
 
@@ -113,6 +139,16 @@ export default function AdminPedidos() {
                                         className="px-3 py-1 border rounded hover:bg-gray-100"
                                     >
                                         Ver detalle
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOrderToHide(o)}
+                                        disabled={loadingId === o.id}
+                                        className="inline-flex items-center justify-center rounded border border-red-200 px-2.5 py-1 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                        aria-label={`Ocultar pedido #${o.public_order_number || o.id}`}
+                                        title="Ocultar del panel"
+                                    >
+                                        🗑️
                                     </button>
                                     {/* {o.status !== "enviado" && (
                                         <button
@@ -295,6 +331,69 @@ export default function AdminPedidos() {
                 );
 
             })()}
+
+            {orderToHide && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
+                        <div className="flex items-start justify-between gap-4 border-b px-5 py-4">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">Ocultar pedido</h2>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    El pedido dejará de verse en el panel de administración.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setOrderToHide(null)}
+                                disabled={loadingId === orderToHide.id}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                aria-label="Cerrar"
+                            >
+                                <X className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3 px-5 py-4">
+                            <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                                <div className="font-semibold text-gray-900">
+                                    Pedido #{orderToHide.public_order_number || orderToHide.id}
+                                </div>
+                                <div className="mt-1 text-gray-600">
+                                    {orderToHide.customer_first_name} {orderToHide.customer_last_name}
+                                </div>
+                                <div className="text-gray-600">
+                                    ${orderToHide.total_amount?.toLocaleString() || 0}
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                                Esta acción mantiene el panel más ordenado para trabajar con los pedidos vigentes.
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-2 border-t px-5 py-4">
+                            <button
+                                type="button"
+                                onClick={() => setOrderToHide(null)}
+                                disabled={loadingId === orderToHide.id}
+                                className="rounded border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => hideOrder(orderToHide)}
+                                disabled={loadingId === orderToHide.id}
+                                className="inline-flex items-center gap-2 rounded bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {loadingId === orderToHide.id && (
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                )}
+                                Ocultar pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

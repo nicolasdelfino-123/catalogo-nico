@@ -305,6 +305,7 @@ function FlavorPills({ catalog = [], onChange }) {
 
 // arriba, junto a otros useRef/useState:
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
+const MAX_HOME_FEATURED_PRODUCTS = 12;
 
 // Normaliza paths viejos
 const normalizeImagePath = (u = "") => {
@@ -439,6 +440,8 @@ export default function AdminProducts() {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [uploadingImageLabel, setUploadingImageLabel] = useState("");
     const [savingProduct, setSavingProduct] = useState(false);
+    const [savingFeaturedId, setSavingFeaturedId] = useState(null);
+    const [featuredProductIds, setFeaturedProductIds] = useState([]);
 
 
 
@@ -457,6 +460,7 @@ export default function AdminProducts() {
         action: "",
         category: "",
     })
+    const HOME_CATEGORY_FILTER = "Inicio"
 
     const token = localStorage.getItem("token") || localStorage.getItem("admin_token")
     if (!token) return <div className="p-6">No autorizado</div>
@@ -469,12 +473,23 @@ export default function AdminProducts() {
 
     const fetchAll = async () => {
         try {
-            const res = await fetch(`${API}/admin/products`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            if (res.ok) {
-                const data = await res.json()
+            const [productsRes, featuredRes] = await Promise.all([
+                fetch(`${API}/admin/products`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                fetch(`${API}/admin/home-featured-products`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+            ])
+
+            if (productsRes.ok) {
+                const data = await productsRes.json()
                 setProducts(data || [])
+            }
+
+            if (featuredRes.ok) {
+                const data = await featuredRes.json()
+                setFeaturedProductIds((data?.product_ids || []).map(Number))
             }
         } catch (error) {
             console.error("Error fetching products:", error)
@@ -484,6 +499,50 @@ export default function AdminProducts() {
     useEffect(() => {
         fetchAll()
     }, [])
+
+    const persistFeaturedSelection = async (nextIds) => {
+        const res = await fetch(`${API}/admin/home-featured-products`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ product_ids: nextIds }),
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data?.error || res.statusText || "No se pudo guardar la selección");
+        }
+    };
+
+    const toggleFeaturedProduct = async (productId, checked) => {
+        const id = Number(productId);
+        const prevIds = featuredProductIds;
+        const isSelected = prevIds.includes(id);
+        if (isSelected === checked) return;
+
+        if (checked && prevIds.length >= MAX_HOME_FEATURED_PRODUCTS) {
+            alert("Solo podés seleccionar hasta 12 productos para Inicio.");
+            return;
+        }
+
+        const nextIds = checked
+            ? [...prevIds, id]
+            : prevIds.filter((item) => item !== id);
+
+        setFeaturedProductIds(nextIds);
+        setSavingFeaturedId(id);
+
+        try {
+            await persistFeaturedSelection(nextIds);
+        } catch (error) {
+            console.error("Error saving featured products:", error);
+            setFeaturedProductIds(prevIds);
+            alert(error?.message || "No se pudo actualizar la selección de Inicio.");
+        } finally {
+            setSavingFeaturedId(null);
+        }
+    };
 
     const startEditPrice = (p, currentPrice) => {
         setEditingPriceId(p.id);
@@ -858,6 +917,17 @@ export default function AdminProducts() {
         try {
             const method = form.id ? "PUT" : "POST"
             const url = form.id ? `${API}/admin/products/${form.id}` : `${API}/admin/products`
+            const currentProductId = form.id ? Number(form.id) : null;
+            const wasFeatured = currentProductId ? featuredProductIds.includes(currentProductId) : false;
+            const wantsFeatured = Boolean(form.show_on_home);
+            if (
+                wantsFeatured &&
+                !wasFeatured &&
+                featuredProductIds.length >= MAX_HOME_FEATURED_PRODUCTS
+            ) {
+                alert("Solo podés seleccionar hasta 12 productos para Inicio.");
+                return;
+            }
 
             // Normalizamos catálogo
             const catalog = (form.flavor_catalog || []).map((x) => ({
@@ -877,7 +947,10 @@ export default function AdminProducts() {
                 if (u.startsWith("/")) return normalizeImagePath(u); // relativo válido → normaliza /public
                 return "";                                     // invalida textos sueltos (evita 404 /frutal)
             })();
-            const { image_urls, volume_stock, ...cleanForm } = form;
+            const cleanForm = { ...form };
+            delete cleanForm.image_urls;
+            delete cleanForm.volume_stock;
+            delete cleanForm.show_on_home;
             const allVolumeOptions = normalizeVolumeOptions(form.volume_options || [], { keepWithoutMl: true });
             const fallbackRetail = Number(
                 allVolumeOptions.find((row) => Number(row?.price) > 0)?.price
@@ -934,6 +1007,8 @@ export default function AdminProducts() {
                 return;
             }
 
+            const savedProductId = Number(json?.product?.id || form.id);
+
             // ✅ Si es creación, ATAMOS las imágenes subidas antes de tener id
             if (!form.id) {
                 const newProduct = json.product; // tu create_product devuelve { product: ... }
@@ -963,6 +1038,20 @@ export default function AdminProducts() {
                             body: JSON.stringify({ image_ids: ids, main_id: mainId }),
                         }).catch(() => { });
                     }
+                }
+            }
+
+            if (savedProductId) {
+                const shouldAddFeatured = wantsFeatured && !featuredProductIds.includes(savedProductId);
+                const shouldRemoveFeatured = !wantsFeatured && featuredProductIds.includes(savedProductId);
+
+                if (shouldAddFeatured || shouldRemoveFeatured) {
+                    const nextFeaturedIds = shouldAddFeatured
+                        ? [...featuredProductIds, savedProductId]
+                        : featuredProductIds.filter((item) => item !== savedProductId);
+
+                    await persistFeaturedSelection(nextFeaturedIds);
+                    setFeaturedProductIds(nextFeaturedIds);
                 }
             }
 
@@ -1112,7 +1201,11 @@ export default function AdminProducts() {
 
         const matchesCategory =
             selectedCategory === "Todos" ||
-            normalizeCategoryLabel(getDisplayCategoryName(p)) === normalizeCategoryLabel(selectedCategory);
+            (selectedCategory === HOME_CATEGORY_FILTER && featuredProductIds.includes(Number(p.id))) ||
+            (
+                selectedCategory !== HOME_CATEGORY_FILTER &&
+                normalizeCategoryLabel(getDisplayCategoryName(p)) === normalizeCategoryLabel(selectedCategory)
+            );
 
         const isActive = Boolean(p?.is_active);
         const matchesStatus =
@@ -1226,6 +1319,7 @@ export default function AdminProducts() {
                         className="border rounded px-3 py-2 sm:w-48"
                     >
                         <option value="Todos">Todas las categorías</option>
+                        <option value={HOME_CATEGORY_FILTER}>Inicio</option>
                         {categories.map((cat) => (
                             <option key={cat} value={cat}>
                                 {cat}
@@ -1295,6 +1389,7 @@ export default function AdminProducts() {
                         volume_stock: "",
                         volume_options: [],
                         stock: 0,
+                        show_on_home: false,
                     })}
 
 
@@ -1415,6 +1510,16 @@ export default function AdminProducts() {
                 </div>
             )}
 
+            <div className="mb-3 flex flex-col gap-1 rounded-lg border border-blue-100 bg-blue-50/70 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="font-semibold text-blue-950">
+                    Productos en Inicio: {featuredProductIds.length} / {MAX_HOME_FEATURED_PRODUCTS}
+                </div>
+                <div className="text-xs text-blue-900 sm:text-right">
+                    <div>Tildá hasta {MAX_HOME_FEATURED_PRODUCTS} productos para mostrarlos en Inicio.</div>
+                    <div>Productos en esta página: {filtered.length}</div>
+                </div>
+            </div>
+
             {/* Tabla */}
             <div ref={resultsRef} className="overflow-x-auto">
                 <table className="w-full text-sm border">
@@ -1442,6 +1547,7 @@ export default function AdminProducts() {
 
                             <th className="hidden p-2 md:table-cell">Stock</th>
                             <th className="hidden p-2 md:table-cell">Categoría</th>
+                            <th className="p-2 text-center">Inicio</th>
                             {/*  <th className="p-2">Sabores</th> */}
                             <th className="hidden p-2 md:table-cell">Estado</th>
                             <th className="p-2"></th>
@@ -1461,7 +1567,10 @@ export default function AdminProducts() {
                                     ? Number(selectedOption.stock)
                                     : (Number.isFinite(Number(p?.stock)) ? Number(p.stock) : 0);
                             const isMobileExpanded = expandedMobileProductId === p.id;
-                            const tableColSpan = budgetMode ? 13 : 11;
+                            const tableColSpan = budgetMode ? 14 : 12;
+                            const isFeaturedSelected = featuredProductIds.includes(Number(p.id));
+                            const featuredLimitReached = featuredProductIds.length >= MAX_HOME_FEATURED_PRODUCTS;
+                            const isSavingFeatured = Number(savingFeaturedId) === Number(p.id);
 
                             return (
                                 <Fragment key={p.id}>
@@ -1658,6 +1767,23 @@ export default function AdminProducts() {
                                             )}
                                         </td>
                                         <td className="hidden p-2 text-center md:table-cell">{getDisplayCategoryName(p)}</td>
+                                        <td className="p-2 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={isFeaturedSelected}
+                                                disabled={isSavingFeatured || (!isFeaturedSelected && featuredLimitReached)}
+                                                onChange={(e) => toggleFeaturedProduct(p.id, e.target.checked)}
+                                                aria-label={isFeaturedSelected ? "Quitar de Inicio" : "Agregar a Inicio"}
+                                                title={
+                                                    isFeaturedSelected
+                                                        ? "Quitar de Inicio"
+                                                        : featuredLimitReached
+                                                            ? `Ya hay ${MAX_HOME_FEATURED_PRODUCTS} seleccionados`
+                                                            : "Mostrar en Inicio"
+                                                }
+                                                className="h-4 w-4 cursor-pointer accent-blue-600 disabled:cursor-not-allowed"
+                                            />
+                                        </td>
                                         <td className="hidden p-2 text-center md:table-cell">
                                             {/* Toggle visual Estado con aviso solo en filtro activos/inactivos */}
                                             <button
@@ -1809,6 +1935,7 @@ export default function AdminProducts() {
                                                         flavor_enabled: p.flavor_enabled ?? (catalog.length > 0),
                                                         flavor_stock_mode: flavorStockMode,
                                                         stock: flavorStockMode ? sum : (Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0),
+                                                        show_on_home: featuredProductIds.includes(Number(p.id)),
                                                     });
                                                 }}
                                                 className="px-3 py-1 border rounded hover:bg-gray-50"
@@ -1860,6 +1987,26 @@ export default function AdminProducts() {
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Categoria</div>
                                                         <div className="mt-1">{getDisplayCategoryName(p)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs uppercase tracking-wide text-gray-500">Inicio</div>
+                                                        <div className="mt-1">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isFeaturedSelected}
+                                                                disabled={isSavingFeatured || (!isFeaturedSelected && featuredLimitReached)}
+                                                                onChange={(e) => toggleFeaturedProduct(p.id, e.target.checked)}
+                                                                aria-label={isFeaturedSelected ? "Quitar de Inicio" : "Agregar a Inicio"}
+                                                                title={
+                                                                    isFeaturedSelected
+                                                                        ? "Quitar de Inicio"
+                                                                        : featuredLimitReached
+                                                                            ? `Ya hay ${MAX_HOME_FEATURED_PRODUCTS} seleccionados`
+                                                                            : "Mostrar en Inicio"
+                                                                }
+                                                                className="h-4 w-4 cursor-pointer accent-blue-600 disabled:cursor-not-allowed"
+                                                            />
+                                                        </div>
                                                     </div>
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Desc. corta</div>
@@ -2406,6 +2553,32 @@ export default function AdminProducts() {
                                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                             />
                             Producto activo
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={Boolean(form.show_on_home)}
+                                onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    const productId = Number(form.id);
+                                    const alreadyFeatured = productId
+                                        ? featuredProductIds.includes(productId)
+                                        : false;
+
+                                    if (
+                                        checked &&
+                                        !alreadyFeatured &&
+                                        featuredProductIds.length >= MAX_HOME_FEATURED_PRODUCTS
+                                    ) {
+                                        alert("Solo podés seleccionar hasta 12 productos para Inicio.");
+                                        return;
+                                    }
+
+                                    setForm({ ...form, show_on_home: checked });
+                                }}
+                            />
+                            Mandar al inicio
                         </label>
 
                         <div className="flex gap-2 justify-end">
