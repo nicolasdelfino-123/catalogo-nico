@@ -214,6 +214,15 @@ def admin_required():
     user = User.query.get(current_user_id)
     return user and user.is_admin
 
+def _serve_spa_for_admin_navigation():
+    wants_html = (
+        request.method == "GET" and
+        request.accept_mimetypes.best_match(["text/html", "application/json"]) == "text/html"
+    )
+    if wants_html and not request.headers.get("Authorization"):
+        return current_app.send_static_file("index.html")
+    return None
+
 # =======================
 #       PRODUCTOS
 # =======================
@@ -426,9 +435,13 @@ def delete_product(product_id):
 
 
 @admin_bp.route('/products', methods=['GET'])
-@jwt_required()
+@jwt_required(optional=True)
 def get_all_products_admin():
     """Obtener todos los productos (incluyendo inactivos) para admin"""
+    spa_response = _serve_spa_for_admin_navigation()
+    if spa_response:
+        return spa_response
+
     if not admin_required():
         return jsonify({'error': 'Acceso denegado. Se requieren permisos de administrador.'}), 403
     
@@ -700,9 +713,13 @@ def delete_image(image_id):
 
 
 @admin_bp.route("/orders", methods=["GET"])
-@jwt_required()
+@jwt_required(optional=True)
 def admin_get_orders():
     """Obtener todos los pedidos (para el panel de administración)."""
+    spa_response = _serve_spa_for_admin_navigation()
+    if spa_response:
+        return spa_response
+
     if not admin_required():
         return jsonify({"error": "Acceso denegado. Se requieren permisos de administrador."}), 403
 
@@ -812,8 +829,12 @@ from flask import redirect
 
 # Alias temporal para compatibilidad con /admin/pedidos
 @admin_bp.route("/pedidos", methods=["GET"])
-@jwt_required()
+@jwt_required(optional=True)
 def alias_pedidos():
+    spa_response = _serve_spa_for_admin_navigation()
+    if spa_response:
+        return spa_response
+
     if not admin_required():
         return jsonify({"error": "Acceso denegado"}), 403
     try:

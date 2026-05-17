@@ -15,6 +15,7 @@ export default function AdminPedidos() {
         localStorage.getItem("token") || localStorage.getItem("admin_token");
 
     const fetchOrders = async () => {
+        if (!token) return;
         try {
             const res = await fetch(`${API}/admin/orders`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -79,6 +80,11 @@ export default function AdminPedidos() {
 
     return (
         <div className="p-6">
+            {!token && (
+                <div className="p-6">No autorizado</div>
+            )}
+            {token && (
+                <>
             <button
                 onClick={() => navigate(-1)}
                 className="mb-4 px-4 py-2 rounded-lg bg-[#232325] text-white hover:bg-black transition-colors"
@@ -393,6 +399,8 @@ export default function AdminPedidos() {
                         </div>
                     </div>
                 </div>
+            )}
+                </>
             )}
         </div>
     );

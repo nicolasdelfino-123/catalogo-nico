@@ -10,12 +10,24 @@ const logofooter = `/${storeConfig.media.footerLogo}`;
 const phone = storeConfig.contact.whatsapp;
 const message = encodeURIComponent(storeConfig.contact.whatsappMessage);
 const link = `https://wa.me/${phone}?text=${message}`;
+const footerTheme = storeConfig.features?.footerTheme === "white" ? "white" : "black";
+const footerBackgroundColor =
+    storeConfig.appearance?.footer?.colors?.[footerTheme] || (footerTheme === "white" ? "#ffffff" : "#0b0b0d");
+const isWhiteFooter = footerTheme === "white";
+const footerTextClass = isWhiteFooter ? "text-gray-800" : "text-gray-300";
+const footerMutedClass = isWhiteFooter ? "text-gray-600" : "text-gray-400";
+const footerHeadingClass = isWhiteFooter ? "text-gray-950" : "text-gray-200";
+const footerLinkClass = isWhiteFooter
+    ? "relative hover:text-gray-950 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-gray-950 after:transition-all after:duration-300 hover:after:w-full"
+    : "relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full";
+const footerBorderClass = isWhiteFooter ? "border-gray-200" : "border-yellow-600/20";
+const footerDeveloperLinkClass = isWhiteFooter ? "hover:text-gray-950" : "hover:text-white";
 
 const Footer = () => {
     const navigate = useNavigate();
     return (
         <div>
-            <footer className="bg-[#0b0b0d] text-gray-300 py-12 font-serif">
+            <footer className={`${footerTextClass} py-12 font-serif`} style={{ backgroundColor: footerBackgroundColor }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
                         <div className="flex flex flex-col items-center">
@@ -25,7 +37,7 @@ const Footer = () => {
                                 className="h-[190px] w-[180px] md:h-[220px] md:w-[220px] mt-[-20px] md:mt-[-10px] mb-[10px] md:mb-[20px] opacity-95 object-contain"
                             />
 
-                            <p className="text-gray-400 text-sm max-w-xs -mt-5 text-center">
+                            <p className={`${footerMutedClass} text-sm max-w-xs -mt-5 text-center`}>
                                 {storeConfig.branding.footerText}
                             </p>
                         </div>
@@ -33,14 +45,14 @@ const Footer = () => {
 
                         {/* 🟢 Productos */}
                         <div>
-                            <h4 className="font-semibold mb-4 uppercase tracking-wider text-sm text-gray-200">Productos</h4>
-                            <ul className="space-y-2 text-gray-400">
+                            <h4 className={`font-semibold mb-4 uppercase tracking-wider text-sm ${footerHeadingClass}`}>Productos</h4>
+                            <ul className={`space-y-2 ${footerMutedClass}`}>
                                 {FOOTER_CATEGORIES.map((c) => (
                                     <li key={c.slug}>
                                         <Link
                                             to={withWholesale(`/categoria/${c.slug}`)}
                                             state={{ fromFooter: true }}     // 👈 Marca que viene desde el footer
-                                            className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
+                                            className={footerLinkClass}
                                         >
                                             {c.name}
                                         </Link>
@@ -78,14 +90,14 @@ const Footer = () => {
                         </div>
  */}
                         <div>
-                            <h4 className="font-semibold mb-4 uppercase tracking-wider text-sm text-gray-200">Contacto</h4>
-                            <ul className="space-y-2 text-gray-300">
+                            <h4 className={`font-semibold mb-4 uppercase tracking-wider text-sm ${footerHeadingClass}`}>Contacto</h4>
+                            <ul className={`space-y-2 ${footerTextClass}`}>
                                 <li>
                                     <a
                                         href={link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
+                                        className={footerLinkClass}
                                     >
                                         WhatsApp: {storeConfig.contact.whatsappDisplay}
                                     </a>
@@ -93,7 +105,7 @@ const Footer = () => {
                                 <li>
                                     <a
                                         href={`mailto:${storeConfig.contact.email}`}
-                                        className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
+                                        className={footerLinkClass}
                                     >
                                         {storeConfig.contact.emailDisplay}
                                     </a>
@@ -103,7 +115,7 @@ const Footer = () => {
                                         href={storeConfig.contact.instagram}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
+                                        className={footerLinkClass}
                                     >
                                         Instagram: {storeConfig.contact.instagramDisplay}
                                     </a>
@@ -113,7 +125,7 @@ const Footer = () => {
 
                     </div>
 
-                    <div className="border-t border-yellow-600/20 mt-8 pt-8 text-center text-gray-400 text-xs">
+                    <div className={`border-t ${footerBorderClass} mt-8 pt-8 text-center ${footerMutedClass} text-xs`}>
                         <p>
                             Copyright © <span
                                 onDoubleClick={() => {
@@ -128,7 +140,7 @@ const Footer = () => {
                                 href="https://wa.me/5493534793366?text=Hola%2C%20vi%20tu%20web%20y%20quiero%20consultarte%20por%20un%20catálogo%20para%20mi%20negocio"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:text-white transition-colors font-medium"
+                                className={`${footerDeveloperLinkClass} transition-colors font-medium`}
                             >
                                 {storeConfig.footer.developerName}
                             </a>.

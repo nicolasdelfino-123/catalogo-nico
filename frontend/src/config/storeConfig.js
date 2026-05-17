@@ -1,6 +1,27 @@
 export const storeConfig = {
     storeName: " Store Perfumes",
 
+    features: {
+        showHeaderContact: true,
+        headerTheme: "white", // "black" | "white"
+        footerTheme: "white", // "black" | "white"
+    },
+
+    appearance: {
+        header: {
+            colors: {
+                white: "#ffffff",
+                black: "#0B0608",
+            },
+        },
+        footer: {
+            colors: {
+                white: "#ffffff",
+                black: "#0b0b0d",
+            },
+        },
+    },
+
     branding: {
         heroTitle: "Fragancias Árabes Exclusivas",
         heroSubtitle: "Aromas intensos · Calidad premium · Precios accesibles",

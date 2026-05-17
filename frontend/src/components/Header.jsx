@@ -11,6 +11,40 @@ import { storeConfig } from "../config/storeConfig.js";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
 const headerLogo = `/${storeConfig.media.headerLogo}`;
+const showHeaderContact = storeConfig.features?.showHeaderContact ?? true;
+const headerThemeSource = storeConfig.features?.headerTheme;
+const headerTheme = headerThemeSource === "white" ? "white" : "black";
+const headerBackgroundColor =
+  storeConfig.appearance?.header?.colors?.[headerTheme] || (headerTheme === "white" ? "#ffffff" : "#0B0608");
+const isWhiteHeader = headerTheme === "white";
+const headerSurfaceClass = isWhiteHeader
+  ? "border-b border-gray-200"
+  : "border-b border-yellow-600/20";
+const headerLinkClass = isWhiteHeader
+  ? "text-gray-950 hover:text-gray-600"
+  : "text-gray-300 hover:text-amber-300";
+const headerIconClass = isWhiteHeader
+  ? "text-gray-950 hover:text-gray-600"
+  : "text-gray-300 hover:text-amber-300";
+const dropdownSurfaceClass = isWhiteHeader
+  ? "bg-white border border-gray-200 border-t-0"
+  : "bg-[#111113] border border-amber-500/20 border-t-0";
+const dropdownTopBorderClass = isWhiteHeader ? "border-gray-200" : "border-amber-500/60";
+const dropdownLinkClass = isWhiteHeader
+  ? "text-gray-900 hover:text-gray-600 hover:bg-gray-50 border-gray-100"
+  : "text-gray-300 hover:text-amber-300 hover:bg-[#1a1a1d] border-amber-500/10";
+const mobileMenuSurfaceClass = isWhiteHeader
+  ? "bg-white border-t border-gray-200"
+  : "bg-[#111113] border-t border-amber-500/20";
+const mobileMutedClass = isWhiteHeader ? "text-gray-500" : "text-gray-400";
+const mobileDividerClass = isWhiteHeader ? "border-gray-200" : "border-gray-700";
+const mobileNestedBorderClass = isWhiteHeader ? "border-gray-200" : "border-amber-500/30";
+const mobileSearchSurfaceClass = isWhiteHeader
+  ? "border border-gray-300 bg-white"
+  : "border border-white/35 bg-[#111113]";
+const mobileSearchInputClass = isWhiteHeader
+  ? "w-full !bg-transparent !text-gray-950 border-0 pr-16 text-[15px] placeholder:text-gray-500 focus:outline-none focus:ring-0 shadow-none"
+  : "w-full !bg-transparent !text-white border-0 pr-16 text-[15px] placeholder:text-gray-500 focus:outline-none focus:ring-0 shadow-none";
 
 const normalizeImagePath = (u = "") => {
   if (!u) return "";
@@ -289,13 +323,14 @@ export default function Header() {
     <>
       <header
         className={[
-          "fixed top-0 left-0 right-0 md:sticky md:top-0 z-50 bg-[#0B0608]/95 border-b border-yellow-600/20 overflow-visible",
+          `fixed top-0 left-0 right-0 md:sticky md:top-0 z-50 ${headerSurfaceClass} overflow-visible`,
           "transition-shadow duration-300",
           isScrolled ? "shadow-lg" : "shadow-none"
         ].join(" ")}
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
           transform: "translateZ(0)",
+          backgroundColor: headerBackgroundColor,
         }}
 
       >
@@ -310,7 +345,7 @@ export default function Header() {
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Abrir menú"
-                className="bg-transparent border-0 p-0 text-white hover:text-gray-200 flex items-center justify-center"
+                className={`bg-transparent border-0 p-0 ${headerIconClass} flex items-center justify-center`}
                 style={{ backgroundColor: 'transparent' }}
               >
                 <svg className="w-5 h-5 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,7 +366,7 @@ export default function Header() {
 
             {/* Navigation - Desktop */}
             <nav className="hidden md:flex h-full items-center space-x-10 font-serif tracking-wider text-sm uppercase">
-              <Link to={withWholesale("/inicio")} className="text-gray-300 hover:text-amber-300 transition-all duration-300">Inicio</Link>
+              <Link to={withWholesale("/inicio")} className={`${headerLinkClass} transition-all duration-300`}>Inicio</Link>
 
 
               {/* Dropdown de Productos */}
@@ -349,7 +384,7 @@ export default function Header() {
               >
                 <button
                   onClick={() => setProductsDropdownOpen(!productsDropdownOpen)}
-                  className="flex items-center text-gray-300 hover:text-amber-300 transition-all duration-300 bg-transparent p-0 border-0 rounded-none appearance-none focus:outline-none focus:ring-0 hover:bg-transparent active:bg-transparent uppercase"
+                  className={`flex items-center ${headerLinkClass} transition-all duration-300 bg-transparent p-0 border-0 rounded-none appearance-none focus:outline-none focus:ring-0 hover:bg-transparent active:bg-transparent uppercase`}
                   style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
                 >
 
@@ -366,19 +401,19 @@ export default function Header() {
 
                 {/* Dropdown Menu */}
                 <div
-                  className={`absolute left-0 top-full -mt-px w-72 bg-[#111113]
+                  className={`absolute left-0 top-full -mt-px w-72 ${dropdownSurfaceClass}
   rounded-b-xl rounded-t-none
-  shadow-2xl border border-amber-500/20 border-t-0
+  shadow-2xl
   backdrop-blur-lg z-50 overflow-hidden
   transition-all duration-200 ease-out
   ${productsDropdownOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}
 `}
                 >
 
-                  <div className="pt-3 pb-2 border-t-2 border-amber-500/60">
+                  <div className={`pt-3 pb-2 border-t-2 ${dropdownTopBorderClass}`}>
                     <Link
                       to={withWholesale("/products")}
-                      className="flex items-center px-5 py-3 text-sm text-gray-300 hover:text-amber-300 hover:bg-[#1a1a1d] transition-all duration-200"
+                      className={`flex items-center px-5 py-3 text-sm ${dropdownLinkClass} transition-all duration-200`}
                       onClick={() => {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                         setProductsDropdownOpen(false);
@@ -391,7 +426,7 @@ export default function Header() {
                       <Link
                         key={category.route}
                         to={withWholesale(category.route)}
-                        className="block px-5 py-3 text-sm text-gray-300 hover:text-amber-300 hover:bg-[#1a1a1d] transition-all duration-200 border-b border-amber-500/10"
+                        className={`block px-5 py-3 text-sm ${dropdownLinkClass} transition-all duration-200 border-b`}
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           setProductsDropdownOpen(false);
@@ -412,17 +447,19 @@ export default function Header() {
             >
               Mayoristas
             </Link> */}
-              <a
-                href={withWholesale("/inicio") + "#asesoria"}
-                onClick={goToContact}
-                className="text-gray-300 hover:text-amber-300 transition-all duration-300"
-              >
-                Contacto
-              </a>
+              {showHeaderContact && (
+                <a
+                  href={withWholesale("/inicio") + "#asesoria"}
+                  onClick={goToContact}
+                  className={`${headerLinkClass} transition-all duration-300`}
+                >
+                  Contacto
+                </a>
+              )}
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center space-x-4 text-white ml-8">
+            <div className={`hidden md:flex items-center space-x-4 ${isWhiteHeader ? "text-gray-950" : "text-white"} ml-8`}>
               <AccountDropdown />
               {/* Lupa Desktop */}
 
@@ -433,7 +470,7 @@ export default function Header() {
                 aria-label="Buscar productos"
                 title="Buscar"
               >
-                <Search className="w-5 h-5 stroke-[1.5] text-gray-300 hover:text-amber-300 transition-colors duration-300" />
+                <Search className={`w-5 h-5 stroke-[1.5] ${headerIconClass} transition-colors duration-300`} />
               </button>
 
 
@@ -445,7 +482,7 @@ export default function Header() {
                 aria-label="Abrir carrito"
                 title="Carrito"
               >
-                <ShoppingCart className="w-5 h-5 stroke-[1.5] text-gray-300 hover:text-amber-300 transition-colors duration-300" />
+                <ShoppingCart className={`w-5 h-5 stroke-[1.5] ${headerIconClass} transition-colors duration-300`} />
                 {cartItemsCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-semibold px-1.5 py-[2px] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItemsCount}
@@ -459,11 +496,11 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                className="relative hover:text-purple-400 transition-colors bg-transparent border-0 p-0 text-white"
+                className={`relative transition-colors bg-transparent border-0 p-0 ${headerIconClass}`}
                 aria-label="Abrir carrito"
                 title="Carrito"
               >
-                <ShoppingCart className="w-5 h-5 stroke-[1.5] text-gray-300 hover:text-amber-300 transition-colors duration-300" />
+                <ShoppingCart className={`w-5 h-5 stroke-[1.5] ${headerIconClass} transition-colors duration-300`} />
                 {cartItemsCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-semibold px-1.5 py-[2px] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItemsCount}
@@ -475,19 +512,21 @@ export default function Header() {
 
           <div className="md:hidden px-5 pb-4">
             <div className="relative" ref={searchBoxRef}>
-              <div className="relative border border-white/35 bg-[#111113] -mx-9 px-4 py-2 rounded-md">
+              <div className={`relative ${mobileSearchSurfaceClass} -mx-9 px-4 py-2 rounded-md`}>
                 <input
                   type="text"
                   value={mobileSearchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Buscar"
                   autoFocus
-                  className="w-full !bg-transparent !text-white border-0 pr-16 text-[15px] placeholder:text-gray-500 focus:outline-none focus:ring-0 shadow-none"
+                  className={mobileSearchInputClass}
                   style={{
-                    backgroundImage: "linear-gradient(#111113, #111113)",
+                    backgroundImage: isWhiteHeader
+                      ? "linear-gradient(#ffffff, #ffffff)"
+                      : "linear-gradient(#111113, #111113)",
                     backgroundRepeat: "no-repeat",
                     backgroundSize: "100% 100%",
-                    WebkitTextFillColor: "#fff",
+                    WebkitTextFillColor: isWhiteHeader ? "#111827" : "#fff",
                   }}
                 />
 
@@ -499,7 +538,7 @@ export default function Header() {
                       setSearchResults([]);
                     }}
                     aria-label="Limpiar búsqueda"
-                    className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-transparent border-0 p-0 text-white hover:text-gray-300"
+                    className={`absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-transparent border-0 p-0 ${headerIconClass}`}
                     style={{ backgroundColor: "transparent" }}
                   >
                     ✕
@@ -507,7 +546,7 @@ export default function Header() {
                 ) : (
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white"
+                    className={`pointer-events-none absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center ${isWhiteHeader ? "text-gray-950" : "text-white"}`}
                   >
                     <Search className="h-6 w-6 stroke-[1.5]" />
                   </div>
@@ -651,14 +690,14 @@ export default function Header() {
             <div className="md:hidden absolute left-0 right-0 top-full z-50">
               <div
                 ref={mobileMenuRef}
-                className="bg-[#111113] shadow-xl border-t border-amber-500/20 px-4 pt-1 pb-5 space-y-3 font-serif tracking-wide"
+                className={`${mobileMenuSurfaceClass} shadow-xl px-4 pt-1 pb-5 space-y-3 font-serif tracking-wide`}
               >
                 {/* Botón X dedicado para cerrar */}
                 <div className="flex justify-end -mt-1 -mr-1">
                   <button
                     onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); }}
                     aria-label="Cerrar menú"
-                    className="bg-transparent border-0 p-3 text-white hover:text-amber-300 flex items-center justify-center"
+                    className={`bg-transparent border-0 p-3 ${headerIconClass} flex items-center justify-center`}
                     style={{ backgroundColor: 'transparent' }}
                   >
                     <svg className="w-5 h-5 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -669,7 +708,7 @@ export default function Header() {
 
                 <Link
                   to={withWholesale("/inicio")}
-                  className="block text-gray-200 hover:text-amber-300 transition-all duration-300 text-lg"
+                  className={`block ${headerLinkClass} transition-all duration-300 text-lg`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Inicio
@@ -677,15 +716,15 @@ export default function Header() {
 
                 {/* Productos en mobile */}
                 <div className="pt-2">
-                  <span className="block text-gray-400 text-sm uppercase tracking-wider mb-2">
+                  <span className={`block ${mobileMutedClass} text-sm uppercase tracking-wider mb-2`}>
                     Productos
                   </span>
 
-                  <div className="border-l border-amber-500/30 pl-4 space-y-2">
+                  <div className={`border-l ${mobileNestedBorderClass} pl-4 space-y-2`}>
 
                     <Link
                       to={withWholesale("/products")}
-                      className="block text-gray-200 hover:text-amber-300 transition-all duration-300"
+                      className={`block ${headerLinkClass} transition-all duration-300`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Ver todos los productos
@@ -695,7 +734,7 @@ export default function Header() {
                       <Link
                         key={category.route}
                         to={withWholesale(category.route)}
-                        className="block text-gray-300 hover:text-amber-300 transition-colors"
+                        className={`block ${headerLinkClass} transition-colors`}
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {category.icon} {category.name}
@@ -705,21 +744,23 @@ export default function Header() {
                   </div>
                 </div>
 
-                <a
-                  href={withWholesale("/inicio") + "#asesoria"}
-                  onClick={goToContact}
+                {showHeaderContact && (
+                  <a
+                    href={withWholesale("/inicio") + "#asesoria"}
+                    onClick={goToContact}
 
-                  className="block pt-4 mt-3 border-t border-gray-700 text-gray-200 hover:text-amber-300 transition-colors text-lg"
-                >
-                  Contacto
-                </a>
+                    className={`block pt-4 mt-3 border-t ${mobileDividerClass} ${headerLinkClass} transition-colors text-lg`}
+                  >
+                    Contacto
+                  </a>
+                )}
 
                 {/* Mobile: Ingresar solo si NO hay usuario */}
                 {
                   store.user && (
-                    <div className="border-t border-gray-700 pt-2">
+                    <div className={`border-t ${mobileDividerClass} pt-2`}>
 
-                      <div className="px-3 py-2 text-sm text-gray-300">
+                      <div className={`px-3 py-2 text-sm ${mobileMutedClass}`}>
                         Hola Administrador
                       </div>
 
@@ -728,7 +769,7 @@ export default function Header() {
                           setIsMenuOpen(false);
                           navigate("/admin/login");
                         }}
-                        className="block w-full text-left px-3 py-2 hover:text-amber-300 transition-all duration-300"
+                        className={`block w-full text-left px-3 py-2 ${headerLinkClass} transition-all duration-300`}
                       >
                         Panel Admin
                       </button>
@@ -738,7 +779,7 @@ export default function Header() {
                           actions.logoutUser();
                           setIsMenuOpen(false);
                         }}
-                        className="block w-full text-left px-3 py-2 hover:text-amber-300 transition-all duration-300"
+                        className={`block w-full text-left px-3 py-2 ${headerLinkClass} transition-all duration-300`}
                       >
                         Cerrar sesión
                       </button>
