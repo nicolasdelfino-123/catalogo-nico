@@ -1,5 +1,5 @@
 export const storeConfig = {
-    storeName: " Store Perfumes",
+    storeName: "Perfumes",
 
     features: {
         showHeaderContact: true,
