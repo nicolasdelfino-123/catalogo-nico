@@ -1,8 +1,8 @@
 export const storeConfig = {
-    storeName: "Perfumes",
+    storeName: "Perfumes Atelier",
 
     features: {
-        showHeaderContact: true,
+        showHeaderContact: false,
         showBrandCarousel: true,
         headerTheme: "black", // "black" | "white"
         footerTheme: "black", // "black" | "white"
@@ -51,8 +51,8 @@ export const storeConfig = {
         },
 
         mobile: {
-            // En mobile el header es fixed; este padding evita que el hero quede debajo.
-            sectionPaddingTop: "80px",
+            // El Header ya reserva espacio en mobile; no agregar padding/margen aca para evitar bloque negro.
+            sectionPaddingTop: "0px",
             sectionPaddingBottom: "0px",
             sectionMarginTop: "0px",
             sectionMarginBottom: "0px",
@@ -107,24 +107,15 @@ export const storeConfig = {
         categories: [
             {
                 id: 1,
-                label: "Perfumes",
-                slug: "perfumes",
-                emoji: "✨",
-                children: [
-                    { id: 3, label: "Femeninos", slug: "femeninos", emoji: "🌸" },
-                    { id: 4, label: "Masculinos", slug: "masculinos", emoji: "🖤" },
-                    { id: 5, label: "Unisex", slug: "unisex", emoji: "✨" },
-                ],
+                label: "Masculinos",
+                slug: "masculinos",
+                emoji: "🖤",
             },
             {
                 id: 2,
-                label: "Gafas",
-                slug: "gafas",
-                emoji: "🕶️",
-                children: [
-                    { id: 6, label: "Ray-Ban", slug: "ray-ban", emoji: "🕶️" },
-                    { id: 7, label: "Scuderia Ferrari", slug: "scuderia-ferrari", emoji: "🏎️" },
-                ],
+                label: "Femeninos",
+                slug: "femeninos",
+                emoji: "🌸",
             },
         ],
     },
@@ -136,12 +127,12 @@ export const storeConfig = {
     },
 
     contact: {
-        whatsapp: "5493534793366",
+        whatsapp: "5492615711337",
         whatsappMessage: "Hola, quiero consultar por un perfume del catálogo",
-        whatsappDisplay: "+56 9 6407 7278",
+        whatsappDisplay: "+54 9 2615 71-1337",
 
-        instagram: "https://www.instagram.com/danna_decants_puq/",
-        instagramDisplay: "@danna_decants_puq",
+        instagram: "https://www.instagram.com/atelier.arr",
+        instagramDisplay: "@atelier.arr",
 
         email: "nicolasdelfino585@gmail.com",
         /*  emailDisplay: "nicolasdelfino585@gmail.com", */
@@ -155,13 +146,13 @@ export const storeConfig = {
 
     media: {
         // Hero desktop: se carga desde frontend/public. Escribi solo el nombre del archivo o una ruta publica, por ejemplo "f3_si.png".
-        heroImageDesktop: "f3_si.png",
+        heroImageDesktop: "portada_desktop.png",
         // Hero mobile: se carga desde frontend/public. Escribi solo el nombre del archivo o una ruta publica, por ejemplo "f3_si.png".
-        heroImageMobile: "f3_si.png",
+        heroImageMobile: "portada_movile_si.png",
         // GIF del GlobalSpinner: se carga desde frontend/public. Si queres cambiarlo, pone el GIF en public y actualiza este nombre.
-        globalSpinnerGif: "danna_spinner.gif",
-        headerLogo: "logo_attar_prueba.png",
-        footerLogo: "logo_danna.jpeg",
+        globalSpinnerGif: "spinner_at.gif",
+        headerLogo: "logo_nico.png",
+        footerLogo: "logo_nico.png",
     },
 
     map: {

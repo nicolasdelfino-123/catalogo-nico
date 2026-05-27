@@ -160,7 +160,7 @@ export default function InicioNuevo() {
             <section className="relative overflow-hidden bg-[#0B0608] text-center">
                 <div className="lg:hidden" style={buildHeroFrameStyle(mobileHero, {
                     sectionMinHeight: "auto",
-                    sectionPaddingTop: "80px",
+                    sectionPaddingTop: "0px",
                     sectionPaddingBottom: "0px",
                     sectionMarginTop: "0px",
                     sectionMarginBottom: "0px",
@@ -342,9 +342,9 @@ shadow-lg shadow-amber-500/20
             {/*  <section id="asesoria">
                 <Asesoria />
             </section> */}
-            <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id='asesoria'>
+            {/*  <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id='asesoria'>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
-                    {/* Columna izquierda: texto */}
+                 
                     <div className="md:col-span-1 text-center md:text-left">
                         <span className="block text-sm tracking-[0.18em] font-semibold uppercase text-gray-500">
                             ¡Contactanos!
@@ -362,7 +362,7 @@ shadow-lg shadow-amber-500/20
 
                         <div className="mt-6 flex justify-center md:justify-center gap-4">
 
-                            {/* Instagram */}
+                  
                             <a
                                 href={IG_URL}
                                 target="_blank"
@@ -376,7 +376,7 @@ shadow-lg shadow-amber-500/20
                                 </svg>
                             </a>
 
-                            {/* WhatsApp */}
+              
                             <a
                                 href={WA_URL}
                                 target="_blank"
@@ -392,11 +392,10 @@ shadow-lg shadow-amber-500/20
                         </div>
                     </div>
 
-                    {/* Divider central (sólo desktop) */}
+            
                     <div className="hidden md:block h-full w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent mx-auto" />
 
-                    {/* Columna derecha: mapa (oscuro por CSS) */}
-                    {/* Columna derecha: mapa (oscuro por CSS) */}
+                
                     <div className="md:col-span-1">
                         <div className="rounded-xl overflow-hidden shadow-lg ring-1 ring-gray-200 bg-black">
                             <div className="aspect-video md:aspect-[4/3] map-dark">
@@ -420,9 +419,9 @@ shadow-lg shadow-amber-500/20
                         </a>
                     </div>
                 </div>
+ */}
 
-                {/* Filtro para “estilo oscuro” del iframe (sin API key) */}
-                <style>{`
+            <style>{`
     .map-dark iframe {
       /* Ajustá estos valores si querés más/menos contraste */
       filter: invert(90%) hue-rotate(180deg) saturate(0.7) brightness(0.85) contrast(1.05);
@@ -430,7 +429,7 @@ shadow-lg shadow-amber-500/20
       transform: translateZ(0);
     }
   `}</style>
-            </section>
+            {/*   </section> */}
             {storeConfig.features?.showBrandCarousel !== false && (
                 <section className="relative bg-white py-8 fade-in-section border-y border-gray-200">
                     <div className="relative z-10 overflow-hidden whitespace-nowrap mx-0 md:mx-[104px]">
